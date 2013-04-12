@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title> Local Storage </title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width">
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+
+<style type="text/css">
+@media screen { body { font-size: 20px } }
+@media screen, print { body { line-height: 1.2 } }
+
+ #clrButton { display:none; }
+</style>
+
+<!-- required to work as app for Cordova -->
+<script src="phonegap.js"></script> 
+<!-- -->
+
+</head>
+<body>
+<input type="text" id="distance">
+ <button onclick="addDistance($_('distance').value)"> Save </button>
+ <input type="checkbox" id="clrCBox" onclick="clrCheck()">
+ <button id="clrButton" onclick="clearDistances()">Clear</button>
+ <br>
+ <button onclick="recPtr=0;showRecs()">|&lt;&lt;</button>
+ <button onclick="recPtr--;showRecs()">&lt;</button>
+ <button onclick="recPtr++;showRecs()">&gt;</button>
+ <button onclick="recPtr=recs.length;showRecs()">&gt;&gt;|</button>
+ <button onclick="showDistances()">Show All</button>
+
+<pre id="history"></pre>
+
+<script type="text/javascript">
+var recs = [];
+var recPtr = 0;
+
+// Modified from:
+//   http://www.dreamincode.net/forums/topic/317492-html5-localstorage-value-array-error/
+/* Add a distance to the distances object in the localStorage.
+ *
+ * @param {Number} distance The distance to store.
+ */
+function addDistance(distance) {
+// Fetch the "distances" object from the localStorage and
+// either unserialize it using JSON.parse, or create a new
+// array if the localStorage has no distances object.
+  var distances = localStorage.getItem("distances");
+  if (!distances) { distances = []; }
+             else { distances = JSON.parse(distances); }
+  
+// Add the new distance to the distances array as a
+// new object, containing the distance and the current timestamp.
+  distances.push({distance: distance, timestamp: (new Date()).getTime()});
+	
+// Serialize the new distances object using JSON.stringify
+// and overwrite the old distances string in the localStorage.
+  localStorage.setItem("distances", JSON.stringify(distances));
+  showDistances();
+}
+
+function $_(IDS) { return document.getElementById(IDS); }
+function padN(n) { return n = (n < 10) ? '0'+n : n; }
+
+function showSingleRecord(ptr) {
+      var str = '';
+      ts = new Date(recs[ptr]['timestamp']);
+      str += (padN(ts.getMonth()+1))+'/'+padN(ts.getDate())+'/'+ts.getFullYear()+' ';
+      var hrs = ts.getHours()+1;  var ampm = '';  // 'am';
+//      if (hrs > 12) { hrs -= 12; ampm = 'pm'; }
+      str += padN(hrs)+':'+padN(ts.getMinutes())+':'+padN(ts.getSeconds())+' '+ampm+' - ';
+      str += recs[ptr]['distance'] + '<br>';
+      return str;
+}
+
+function showDistances() {
+  var str = '';
+/* */
+  var ts;
+  recs = JSON.parse(localStorage.getItem('distances'));  // .reverse();  // alt. display (LIFO)
+  if (recs != null) {
+    for (var i=0; i<recs.length; i++) { str += showSingleRecord(i); }
+  } else { str = 'Nothing to display yet!'; }
+/* */
+//  str = localStorage.getItem('distances');  // raw JSON display for testing purposes only
+
+  $_('history').innerHTML = str;  // localStorage.getItem('distances');
+}
+function showRecs() {
+  if (recPtr < 0) { recPtr = 0; }
+  if (recPtr > recs.length-1) { recPtr = recs.length-1; }
+  $_('history').innerHTML = showSingleRecord(recPtr);
+}
+
+function clrCheck() {
+  if ($_('clrCBox').checked == true) { $_('clrButton').style.display='inline' }
+                                else { $_('clrButton').style.display = 'none'; }
+}
+function clearDistances() {
+  if ($_('clrCBox').checked) { localStorage.removeItem("distances"); }
+  showDistances();
+}
+window.onload = function() { showDistances(); }
+</script>
+</body>
+</html>
